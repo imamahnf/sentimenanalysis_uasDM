@@ -2,8 +2,8 @@ import streamlit as st
 import pickle
 
 # Memuat pipeline dari file pickle
-with open("deployment_pipeline.pkl", "rb") as file:
-    pipeline = pickle.load(file)
+with open("models/deployment_pipeline.pkl", "rb") as file:
+    model = joblib.load(file)
 
 # Menambahkan CSS kustom untuk Streamlit
 st.markdown("""
