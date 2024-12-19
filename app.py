@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 
 # Load the trained model
-model_path = '/content/sentiment_analysis_model.pkl'
+model_path = 'sentiment_analysis_model.pkl'
 model = joblib.load(model_path)
 
 # Define prediction function
