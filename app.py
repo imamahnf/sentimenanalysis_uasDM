@@ -1,52 +1,32 @@
 import streamlit as st
-import pandas as pd
-import joblib
+import pickle
 
-# Load the trained model
-model_path = 'deployment_pipeline.pkl'
-model = joblib.load(model_path)
+# Load model pipeline
+@st.cache_resource
+def load_model():
+    with open("sentiment_analysis_pipeline.pkl", "rb") as file:
+        pipeline = pickle.load(file)
+    return pipeline
 
-# Define prediction function
-def predict_sentiment(text):
-    prediction = model.predict([text])[0]
-    return prediction
+pipeline = load_model()
 
-# Streamlit App Setup
+# Halaman utama Streamlit
 st.title("Sentiment Analysis App")
-st.write("Upload a CSV file or enter text to analyze sentiment.")
+st.write("Masukkan teks di bawah ini untuk menganalisis sentimen (positif atau negatif).")
 
-# Text input section
-st.header("Analyze Text")
-user_text = st.text_area("Enter text for sentiment analysis:")
-if st.button("Analyze Text"):
-    if user_text.strip():
-        result = predict_sentiment(user_text)
-        st.success(f"Predicted Sentiment: {result}")
+# Input teks dari pengguna
+user_input = st.text_area("Masukkan teks Anda:", "")
+
+# Tombol prediksi
+if st.button("Analisis Sentimen"):
+    if user_input.strip() == "":
+        st.warning("Harap masukkan teks untuk dianalisis.")
     else:
-        st.error("Please enter some text.")
-
-# File upload section
-st.header("Upload CSV File")
-file = st.file_uploader("Upload a CSV file with a 'text' column:", type=['csv'])
-
-if file is not None:
-    try:
-        data = pd.read_csv(file)
-        if 'text' in data.columns:
-            data['predicted_sentiment'] = data['text'].apply(predict_sentiment)
-            st.success("File successfully processed!")
-            st.dataframe(data[['text', 'predicted_sentiment']])
-            # Option to download processed file
-            csv = data.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="Download Results as CSV",
-                data=csv,
-                file_name='sentiment_analysis_results.csv',
-                mime='text/csv'
-            )
+        # Prediksi sentimen
+        prediction = pipeline.predict([user_input])[0]
+        
+        # Tampilkan hasil
+        if prediction == "positive":
+            st.success("Hasil Sentimen: **Positif** 😊")
         else:
-            st.error("CSV file must contain a 'text' column.")
-    except Exception as e:
-        st.error(f"Error processing file: {e}")
-
-st.info("Developed by Your Name - Sentiment Analysis Model Deployment")
+            st.error("Hasil Sentimen: **Negatif** 😞")
