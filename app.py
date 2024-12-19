@@ -1,70 +1,52 @@
 import streamlit as st
-import pickle
+import pandas as pd
+import joblib
 
-# Memuat pipeline dari file pickle
-with open("models/deployment_pipeline.pkl", "rb") as file:
-    model = joblib.load(file)
+# Load the trained model
+model_path = '/content/sentiment_analysis_model.pkl'
+model = joblib.load(model_path)
 
-# Menambahkan CSS kustom untuk Streamlit
-st.markdown("""
-    <style>
-        body {
-            font-family: 'Poppins', Arial, sans-serif;
-            background: #f0f8ff;
-            padding: 20px;
-        }
+# Define prediction function
+def predict_sentiment(text):
+    prediction = model.predict([text])[0]
+    return prediction
 
-        h1 {
-            color: #007bff;
-            text-align: center;
-            margin-bottom: 20px;
-        }
+# Streamlit App Setup
+st.title("Sentiment Analysis App")
+st.write("Upload a CSV file or enter text to analyze sentiment.")
 
-        .stButton > button {
-            background-color: #28a745;
-            color: white;
-            border-radius: 5px;
-            font-size: 16px;
-            padding: 10px 20px;
-        }
+# Text input section
+st.header("Analyze Text")
+user_text = st.text_area("Enter text for sentiment analysis:")
+if st.button("Analyze Text"):
+    if user_text.strip():
+        result = predict_sentiment(user_text)
+        st.success(f"Predicted Sentiment: {result}")
+    else:
+        st.error("Please enter some text.")
 
-        .stButton > button:hover {
-            background-color: #218838;
-        }
-    </style>
-""", unsafe_allow_html=True)
+# File upload section
+st.header("Upload CSV File")
+file = st.file_uploader("Upload a CSV file with a 'text' column:", type=['csv'])
 
-# Header aplikasi
-st.title("Aplikasi Prediksi Sentimen")
-
-# Memilih jenis input
-tab = st.radio("Pilih Jenis Input", ["Teks", "Dokumen"])
-
-if tab == "Teks":
-    # Input teks untuk analisis
-    input_teks = st.text_area("Masukkan teks untuk analisis sentimen:", height=150)
-    if st.button("Prediksi Sentimen"):
-        if input_teks.strip():
-            # Prediksi sentimen menggunakan pipeline
-            hasil_prediksi = pipeline.predict([input_teks])[0]
-            if hasil_prediksi == "positive":
-                st.success("Hasil Prediksi: Sentimen Positif 😊")
-            else:
-                st.error("Hasil Prediksi: Sentimen Negatif 😞")
+if file is not None:
+    try:
+        data = pd.read_csv(file)
+        if 'text' in data.columns:
+            data['predicted_sentiment'] = data['text'].apply(predict_sentiment)
+            st.success("File successfully processed!")
+            st.dataframe(data[['text', 'predicted_sentiment']])
+            # Option to download processed file
+            csv = data.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="Download Results as CSV",
+                data=csv,
+                file_name='sentiment_analysis_results.csv',
+                mime='text/csv'
+            )
         else:
-            st.warning("Harap masukkan teks terlebih dahulu.")
-elif tab == "Dokumen":
-    # Input file dokumen
-    file = st.file_uploader("Unggah file dokumen (.txt)", type=["txt"])
-    if file is not None:
-        file_content = file.read().decode("utf-8")
-        if st.button("Prediksi Sentimen Dokumen"):
-            if file_content.strip():
-                # Prediksi sentimen untuk seluruh dokumen
-                hasil_prediksi = pipeline.predict([file_content])[0]
-                if hasil_prediksi == "positive":
-                    st.success("Hasil Prediksi: Sentimen Positif 😊")
-                else:
-                    st.error("Hasil Prediksi: Sentimen Negatif 😞")
-            else:
-                st.warning("Dokumen kosong. Harap unggah file yang valid.")
+            st.error("CSV file must contain a 'text' column.")
+    except Exception as e:
+        st.error(f"Error processing file: {e}")
+
+st.info("Developed by Your Name - Sentiment Analysis Model Deployment")
