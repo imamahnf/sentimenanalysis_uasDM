@@ -1,32 +1,51 @@
 import streamlit as st
 import pickle
 
-# Load model pipeline
+# ==========================================
+# Fungsi untuk Memuat Pipeline
+# ==========================================
 @st.cache_resource
-def load_model():
-    with open("sentiment_analysis_pipeline.pkl", "rb") as file:
-        pipeline = pickle.load(file)
-    return pipeline
+def load_pipeline():
+    with open('sentiment_pipeline.pkl', 'rb') as file:
+        return pickle.load(file)
 
-pipeline = load_model()
+# Memuat pipeline
+pipeline = load_pipeline()
 
-# Halaman utama Streamlit
-st.title("Sentiment Analysis App")
-st.write("Masukkan teks di bawah ini untuk menganalisis sentimen (positif atau negatif).")
+# ==========================================
+# Judul Aplikasi
+# ==========================================
+st.title("Analisis Sentimen Positif & Negatif")
+st.write("""
+Aplikasi ini menggunakan model SVM yang telah dilatih untuk menganalisis sentimen teks.
+Hanya mendukung dua sentimen: *Positif* dan *Negatif*.
+""")
 
-# Input teks dari pengguna
-user_input = st.text_area("Masukkan teks Anda:", "")
+# ==========================================
+# Input Teks dari Pengguna
+# ==========================================
+user_input = st.text_area("Masukkan teks untuk analisis sentimen:", "")
 
-# Tombol prediksi
+# Tombol untuk Prediksi
 if st.button("Analisis Sentimen"):
-    if user_input.strip() == "":
-        st.warning("Harap masukkan teks untuk dianalisis.")
-    else:
+    if user_input.strip():
         # Prediksi sentimen
         prediction = pipeline.predict([user_input])[0]
-        
-        # Tampilkan hasil
-        if prediction == "positive":
-            st.success("Hasil Sentimen: **Positif** 😊")
-        else:
-            st.error("Hasil Sentimen: **Negatif** 😞")
+
+        # Menampilkan hasil
+        st.write("*Kalimat:*", user_input)
+        if prediction == 'positif':
+            st.success("*Prediksi Sentimen:* Positif 😊")
+        elif prediction == 'negatif':
+            st.error("*Prediksi Sentimen:* Negatif 😟")
+    else:
+        st.warning("Teks tidak boleh kosong!")
+
+# ==========================================
+# Sidebar Informasi
+# ==========================================
+st.sidebar.title("Tentang Aplikasi")
+st.sidebar.info("""
+Aplikasi ini dirancang untuk mendeteksi sentimen positif dan negatif pada teks.
+Model SVM telah dilatih dengan pipeline preprocessing, TF-IDF, dan SVM.
+""")
